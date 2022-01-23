@@ -7,6 +7,8 @@ After downloading these files, you can work with them as in a typical deal.II tu
 
 A short description can be found at the beginning of the step-fsi.cc file.
 
-Soon, a preprint version of a paper with some more information and some results will be uploaded.
+More information and some results can be found in the corresponding proceedings paper
+
+http://www.thomaswick.org/links/Wi21_YIC_FSI_adjoint_final.pdf
 
 In case you have questions, please let me know.
