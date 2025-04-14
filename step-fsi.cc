@@ -1322,12 +1322,7 @@ FSI_PU_DWR_Problem<dim>::assemble_matrix_primal()
   // This is the identity matrix in two dimensions:
   const Tensor<2, dim> Identity = ALE_Transformations ::get_Identity<dim>();
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_primal
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_primal.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_primal.active_cell_iterators())
     {
       fe_values.reinit(cell);
       local_matrix = 0;
@@ -1768,14 +1763,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_primal()
   std::vector<std::vector<Tensor<1, dim>>> old_solution_face_grads(
     n_face_q_points, std::vector<Tensor<1, dim>>(dim + dim + 1));
 
-
-
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_primal
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_primal.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_primal.active_cell_iterators())
     {
       fe_values.reinit(cell);
       local_rhs = 0;
@@ -2571,15 +2559,10 @@ FSI_PU_DWR_Problem<dim>::assemble_matrix_adjoint()
   // This is the identity matrix in two dimensions:
   const Tensor<2, dim> Identity = ALE_Transformations ::get_Identity<dim>();
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_adjoint
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_adjoint.end();
-
   typename DoFHandler<dim>::active_cell_iterator cell_primal =
     dof_handler_primal.begin_active();
 
-  for (; cell != endc; ++cell, ++cell_primal)
+  for (const auto &cell : dof_handler_adjoint.active_cell_iterators())
     {
       fe_values.reinit(cell);
       fe_values_primal.reinit(cell_primal);
@@ -2978,6 +2961,9 @@ FSI_PU_DWR_Problem<dim>::assemble_matrix_adjoint()
 
         } // end if (second PDE: STVK material)
           // end cell
+
+      // update primal cell
+      ++cell_primal;
     }
 
   timer.leave_subsection();
@@ -3024,15 +3010,8 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_drag()
 
   const Tensor<2, dim> Identity = ALE_Transformations ::get_Identity<dim>();
 
-
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_adjoint
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_adjoint.end();
-
-
   Tensor<1, 2> drag_lift_value;
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_adjoint.active_cell_iterators())
     {
       fe_values.reinit(cell);
       local_rhs = 0;
@@ -3269,12 +3248,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_pressure_point()
   Point<dim> evaluation_point(0.15, 0.2);
   Point<dim> evaluation_point_2(0.25, 0.2);
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_adjoint
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_adjoint.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_adjoint.active_cell_iterators())
     for (unsigned int vertex = 0; vertex < GeometryInfo<dim>::vertices_per_cell;
          ++vertex)
       {
@@ -3314,12 +3288,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_displacement_point()
 
   Point<dim> evaluation_point(0.6, 0.2);
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_adjoint
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_adjoint.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_adjoint.active_cell_iterators())
     for (unsigned int vertex = 0; vertex < GeometryInfo<dim>::vertices_per_cell;
          ++vertex)
       {
@@ -3489,12 +3458,9 @@ FSI_PU_DWR_Problem<dim>::output_results(
       fe_adjoint.dofs_per_cell);
 
     typename DoFHandler<dim>::active_cell_iterator
-      joint_cell   = joint_dof_handler.begin_active(),
-      joint_endc   = joint_dof_handler.end(),
       cell_primal  = dof_handler_primal.begin_active(),
       cell_adjoint = dof_handler_adjoint.begin_active();
-    for (; joint_cell != joint_endc;
-         ++joint_cell, ++cell_primal, ++cell_adjoint)
+    for (const auto &joint_cell : joint_dof_handler.active_cell_iterators())
       {
         joint_cell->get_dof_indices(local_joint_dof_indices);
         cell_primal->get_dof_indices(local_dof_indices_primal);
@@ -3521,6 +3487,12 @@ FSI_PU_DWR_Problem<dim>::output_results(
                 local_dof_indices_adjoint[joint_fe.system_to_base_index(i)
                                             .second]);
             }
+
+        // update primal cell iterator
+        ++cell_primal;
+
+        // update adjoint cell iterator
+        ++cell_adjoint;
       }
   }
 
@@ -3615,12 +3587,7 @@ FSI_PU_DWR_Problem<dim>::compute_drag_lift_fsi_fluid_tensor()
 
   Tensor<1, dim> drag_lift_value;
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_primal
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_primal.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_primal.active_cell_iterators())
     {
       // First, we are going to compute the forces that
       // act on the cylinder. We notice that only the fluid
@@ -3822,12 +3789,7 @@ FSI_PU_DWR_Problem<dim>::compute_drag_lift_fsi_fluid_tensor_domain()
   std::vector<std::vector<Tensor<1, dim>>> old_solution_grads(
     n_q_points, std::vector<Tensor<1, dim>>(dim + dim + 1));
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_primal
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_primal.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_primal.active_cell_iterators())
     {
       local_rhs = 0;
 
@@ -4029,12 +3991,7 @@ FSI_PU_DWR_Problem<dim>::compute_drag_lift_fsi_fluid_tensor_domain_structure()
   std::vector<std::vector<Tensor<1, dim>>> old_solution_grads(
     n_q_points, std::vector<Tensor<1, dim>>(dim + dim + 1));
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_primal
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_primal.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_primal.active_cell_iterators())
     {
       local_rhs = 0;
 
@@ -4194,14 +4151,7 @@ FSI_PU_DWR_Problem<dim>::compute_minimal_J()
   double min_J = 1.0e+5;
   double J     = 1.0e+5;
 
-
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_primal
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_primal.end();
-
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_primal.active_cell_iterators())
     {
       fe_values.reinit(cell);
 
@@ -4298,12 +4248,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::refine_mesh()
 {
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_primal
-                                                          .begin_active(),
-                                                 endc =
-                                                   dof_handler_primal.end();
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_primal.active_cell_iterators())
     {
       // Refine the solid
       if (cell->material_id() == 1)
@@ -4472,14 +4417,10 @@ FSI_PU_DWR_Problem<dim>::compute_error_indicators_a_la_PU_DWR(
 
   const Tensor<2, dim> Identity = ALE_Transformations ::get_Identity<dim>();
 
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_pou
-                                                          .begin_active(),
-                                                 endc = dof_handler_pou.end();
-
   typename DoFHandler<dim>::active_cell_iterator cell_adjoint =
     dof_handler_adjoint.begin_active();
 
-  for (; cell != endc; ++cell, ++cell_adjoint)
+  for (const auto &cell : dof_handler_pou.active_cell_iterators())
     {
       fe_values_pou.reinit(cell);
       fe_values_adjoint.reinit(cell_adjoint);
@@ -4699,6 +4640,8 @@ FSI_PU_DWR_Problem<dim>::compute_error_indicators_a_la_PU_DWR(
       for (unsigned int i = 0; i < dofs_per_cell; ++i)
         error_indicators(local_dof_indices[i]) += local_err_ind(i);
 
+      // update adjoint cell iterator
+      ++cell_adjoint;
 
     } // end cell loop for PU FE elements
 
@@ -4828,18 +4771,12 @@ FSI_PU_DWR_Problem<dim>::refine_average_with_PU_DWR(
   // Refining all cells that have values above the mean value
   double error_indicator_mean_value = error_indicators.mean_value();
 
-  // Pou cell  later
-  typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_pou
-                                                          .begin_active(),
-                                                 endc = dof_handler_pou.end();
-
   double error_ind = 0.0;
   // 1.1; for drag and lift and none mesh smoothing
   // 5.0; for pressure difference and maximal mesh smoothing
   double alpha = 0.9;
 
-
-  for (; cell != endc; ++cell)
+  for (const auto &cell : dof_handler_pou.active_cell_iterators())
     {
       error_ind = 0.0;
       cell->get_dof_indices(local_dof_indices);
