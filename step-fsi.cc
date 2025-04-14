@@ -2,7 +2,7 @@
  Thomas Wick
  Leibniz University Hannover
  Institute of Applied Mathematics (IfAM)
- Date: May 22, 2021
+ Date: May 22, 2021, April 14, 2025
  E-mail: thomas.wick@ifam.uni-hannover.de
 
  Short title: goal-oriented-fsi: Goal-oriented error control for FSI
@@ -18,10 +18,10 @@
      dual-weighted residual (DWR) a posteriori error estimation
 
 
- This code is based on the deal.II.9.1.1 and
+ This code is based on the deal.II.9.6.2 and
  licensed under the "GNU Lesser General Public License (LGPL)"
  with all information in LICENSE.
- Copyright 2017-2021: Thomas Wick
+ Copyright 2017-2025: Thomas Wick
 
 
  This code is a modification of
@@ -907,7 +907,7 @@ private:
   FESystem<dim>   fe_primal;
   DoFHandler<dim> dof_handler_primal;
 
-  ConstraintMatrix constraints_primal;
+  AffineConstraints<double> constraints_primal;
 
   BlockSparsityPattern      sparsity_pattern_primal;
   BlockSparseMatrix<double> system_matrix_primal;
@@ -922,7 +922,7 @@ private:
   FESystem<dim>   fe_adjoint;
   DoFHandler<dim> dof_handler_adjoint;
 
-  ConstraintMatrix constraints_adjoint;
+  AffineConstraints<double> constraints_adjoint;
 
   BlockSparsityPattern      sparsity_pattern_adjoint;
   BlockSparseMatrix<double> system_matrix_adjoint;
@@ -1141,7 +1141,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::setup_system_primal()
 {
-  timer.enter_section("Setup system.");
+  timer.enter_subsection("Setup system.");
 
   system_matrix_primal.clear();
 
@@ -1170,9 +1170,8 @@ FSI_PU_DWR_Problem<dim>::setup_system_primal()
   constraints_primal.close();
 
   std::vector<types::global_dof_index> dofs_per_block(3);
-  DoFTools::count_dofs_per_block(dof_handler_primal,
-                                 dofs_per_block,
-                                 block_component);
+  dofs_per_block =
+    DoFTools::count_dofs_per_fe_block(dof_handler_primal, block_component);
   const unsigned int n_v = dofs_per_block[0], n_u = dofs_per_block[1],
                      n_p = dofs_per_block[2];
 
@@ -1234,7 +1233,7 @@ FSI_PU_DWR_Problem<dim>::setup_system_primal()
 
   system_rhs_primal.collect_sizes();
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -1261,7 +1260,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_matrix_primal()
 {
-  timer.enter_section("Assemble primal matrix.");
+  timer.enter_subsection("Assemble primal matrix.");
   system_matrix_primal = 0;
 
   QGauss<dim>     quadrature_formula(degree + 2);
@@ -1711,7 +1710,7 @@ FSI_PU_DWR_Problem<dim>::assemble_matrix_primal()
       // end cell
     }
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -1724,7 +1723,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_primal()
 {
-  timer.enter_section("Assemble primal rhs.");
+  timer.enter_subsection("Assemble primal rhs.");
   system_rhs_primal = 0;
 
   QGauss<dim>     quadrature_formula(degree + 2);
@@ -2083,7 +2082,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_primal()
 
     } // end cell
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -2121,14 +2120,16 @@ FSI_PU_DWR_Problem<dim>::set_initial_bc_primal()
   component_mask[dim] = false; // ux
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            2,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            3,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
@@ -2136,13 +2137,15 @@ FSI_PU_DWR_Problem<dim>::set_initial_bc_primal()
   component_mask[dim] = true; // ux
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            80,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            81,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
@@ -2151,7 +2154,8 @@ FSI_PU_DWR_Problem<dim>::set_initial_bc_primal()
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            1,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
@@ -2177,30 +2181,35 @@ FSI_PU_DWR_Problem<dim>::set_newton_bc_primal()
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            0,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_primal,
                                            component_mask);
   component_mask[dim] = false; // ux
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            2,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_primal,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            3,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_primal,
                                            component_mask);
   component_mask[dim] = true; // ux
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            80,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_primal,
                                            component_mask);
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            81,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_primal,
                                            component_mask);
   component_mask[0] = false;
@@ -2208,7 +2217,8 @@ FSI_PU_DWR_Problem<dim>::set_newton_bc_primal()
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            1,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_primal,
                                            component_mask);
 }
@@ -2220,7 +2230,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::solve_primal()
 {
-  timer.enter_section("Solve primal linear system.");
+  timer.enter_subsection("Solve primal linear system.");
   Vector<double> sol, rhs;
   sol = newton_update_primal;
   rhs = system_rhs_primal;
@@ -2229,7 +2239,7 @@ FSI_PU_DWR_Problem<dim>::solve_primal()
   newton_update_primal = sol;
 
   constraints_primal.distribute(newton_update_primal);
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 // This is the Newton iteration with simple linesearch backtracking
@@ -2356,8 +2366,8 @@ FSI_PU_DWR_Problem<dim>::newton_iteration_primal()
     }
 
   timer_newton_global.stop();
-  std::cout << "Wall time solving primal system:  " << timer_newton_global()
-            << std::endl;
+  std::cout << "Wall time solving primal system:  "
+            << timer_newton_global.cpu_time() << std::endl;
   timer_newton_global.reset();
 }
 
@@ -2372,7 +2382,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::setup_system_adjoint()
 {
-  timer.enter_section("Setup adjoint system.");
+  timer.enter_subsection("Setup adjoint system.");
 
   system_matrix_adjoint.clear();
 
@@ -2401,9 +2411,8 @@ FSI_PU_DWR_Problem<dim>::setup_system_adjoint()
   constraints_adjoint.close();
 
   std::vector<types::global_dof_index> dofs_per_block(3);
-  DoFTools::count_dofs_per_block(dof_handler_adjoint,
-                                 dofs_per_block,
-                                 block_component);
+  dofs_per_block =
+    DoFTools::count_dofs_per_fe_block(dof_handler_adjoint, block_component);
   const unsigned int n_v = dofs_per_block[0], n_u = dofs_per_block[1],
                      n_p = dofs_per_block[2];
 
@@ -2457,7 +2466,7 @@ FSI_PU_DWR_Problem<dim>::setup_system_adjoint()
 
   system_rhs_adjoint.collect_sizes();
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -2466,7 +2475,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_matrix_adjoint()
 {
-  timer.enter_section("Assemble adjoint matrix.");
+  timer.enter_subsection("Assemble adjoint matrix.");
   system_matrix_adjoint = 0;
 
   // Choose quadrature rule sufficiently high with respect
@@ -2971,7 +2980,7 @@ FSI_PU_DWR_Problem<dim>::assemble_matrix_adjoint()
           // end cell
     }
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -2981,7 +2990,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_drag()
 {
-  timer.enter_section("Assemble adjoint rhs.");
+  timer.enter_subsection("Assemble adjoint rhs.");
   system_rhs_adjoint = 0;
 
   // Info: Quadrature degree must be sufficiently high
@@ -3246,7 +3255,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_drag()
 
     } // end cell
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -3254,7 +3263,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_pressure_point()
 {
-  timer.enter_section("Assemble adjoint rhs.");
+  timer.enter_subsection("Assemble adjoint rhs.");
   system_rhs_adjoint = 0;
 
   Point<dim> evaluation_point(0.15, 0.2);
@@ -3292,7 +3301,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_pressure_point()
           }
       }
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -3300,7 +3309,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_displacement_point()
 {
-  timer.enter_section("Assemble adjoint rhs.");
+  timer.enter_subsection("Assemble adjoint rhs.");
   system_rhs_adjoint = 0;
 
   Point<dim> evaluation_point(0.6, 0.2);
@@ -3326,7 +3335,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_displacement_point()
           }
       }
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -3347,30 +3356,35 @@ FSI_PU_DWR_Problem<dim>::set_bc_adjoint()
 
   VectorTools::interpolate_boundary_values(dof_handler_adjoint,
                                            0,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_adjoint,
                                            component_mask);
   component_mask[dim] = false; // ux
   VectorTools::interpolate_boundary_values(dof_handler_adjoint,
                                            2,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_adjoint,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_adjoint,
                                            3,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_adjoint,
                                            component_mask);
   component_mask[dim] = true; // ux
   VectorTools::interpolate_boundary_values(dof_handler_adjoint,
                                            80,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_adjoint,
                                            component_mask);
   VectorTools::interpolate_boundary_values(dof_handler_adjoint,
                                            81,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_adjoint,
                                            component_mask);
 
@@ -3380,7 +3394,8 @@ FSI_PU_DWR_Problem<dim>::set_bc_adjoint()
 
   VectorTools::interpolate_boundary_values(dof_handler_adjoint,
                                            1,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            constraints_adjoint,
                                            component_mask);
 }
@@ -3415,7 +3430,7 @@ FSI_PU_DWR_Problem<dim>::solve_adjoint()
   timer_solve_adjoint.start();
 
   // Linear solution
-  timer.enter_section("Solve linear adjoint system.");
+  timer.enter_subsection("Solve linear adjoint system.");
   Vector<double> sol, rhs;
   sol = solution_adjoint;
   rhs = system_rhs_adjoint;
@@ -3429,12 +3444,12 @@ FSI_PU_DWR_Problem<dim>::solve_adjoint()
   constraints_adjoint.distribute(solution_adjoint);
   timer_solve_adjoint.stop();
 
-  std::cout << "Wall time solving adjoint system: " << timer_solve_adjoint()
-            << std::endl;
+  std::cout << "Wall time solving adjoint system: "
+            << timer_solve_adjoint.cpu_time() << std::endl;
 
   timer_solve_adjoint.reset();
 
-  timer.exit_section();
+  timer.leave_subsection();
 }
 
 
@@ -3786,7 +3801,7 @@ FSI_PU_DWR_Problem<dim>::compute_drag_lift_fsi_fluid_tensor_domain()
   FEValues<dim>     fe_values(fe_primal,
                           quadrature_formula,
                           update_values | update_gradients | update_JxW_values |
-                            update_q_points);
+                            update_quadrature_points);
 
   const unsigned int dofs_per_cell = fe_primal.dofs_per_cell;
   const unsigned int n_q_points    = quadrature_formula.size();
@@ -3935,25 +3950,29 @@ FSI_PU_DWR_Problem<dim>::compute_drag_lift_fsi_fluid_tensor_domain()
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            0,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            1,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            2,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            81,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
@@ -3989,7 +4008,7 @@ FSI_PU_DWR_Problem<dim>::compute_drag_lift_fsi_fluid_tensor_domain_structure()
   FEValues<dim>     fe_values(fe_primal,
                           quadrature_formula,
                           update_values | update_gradients | update_JxW_values |
-                            update_q_points);
+                            update_quadrature_points);
 
   const unsigned int dofs_per_cell = fe_primal.dofs_per_cell;
   const unsigned int n_q_points    = quadrature_formula.size();
@@ -4113,26 +4132,30 @@ FSI_PU_DWR_Problem<dim>::compute_drag_lift_fsi_fluid_tensor_domain_structure()
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            80,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            0,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            1,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
   VectorTools::interpolate_boundary_values(dof_handler_primal,
                                            2,
-                                           ZeroFunction<dim>(dim + dim + 1),
+                                           dealii::Functions::ZeroFunction<dim>(
+                                             dim + dim + 1),
                                            boundary_values,
                                            component_mask);
 
@@ -4333,12 +4356,12 @@ FSI_PU_DWR_Problem<dim>::compute_error_indicators_a_la_PU_DWR(
 
   // Implement the interpolation operator
   // (z-z_h)=(z-I_hz)
-  ConstraintMatrix dual_hanging_node_constraints;
+  AffineConstraints<double> dual_hanging_node_constraints;
   DoFTools::make_hanging_node_constraints(dof_handler_adjoint,
                                           dual_hanging_node_constraints);
   dual_hanging_node_constraints.close();
 
-  ConstraintMatrix primal_hanging_node_constraints;
+  AffineConstraints<double> primal_hanging_node_constraints;
   DoFTools::make_hanging_node_constraints(dof_handler_primal,
                                           primal_hanging_node_constraints);
   primal_hanging_node_constraints.close();
@@ -4349,9 +4372,8 @@ FSI_PU_DWR_Problem<dim>::compute_error_indicators_a_la_PU_DWR(
   // Construct a local primal solution that
   // has the length of the adjoint vector
   std::vector<types::global_dof_index> dofs_per_block(3);
-  DoFTools::count_dofs_per_block(dof_handler_adjoint,
-                                 dofs_per_block,
-                                 block_component);
+  dofs_per_block =
+    DoFTools::count_dofs_per_fe_block(dof_handler_adjoint, block_component);
   const unsigned int n_v = dofs_per_block[0];
   const unsigned int n_u = dofs_per_block[1];
   const unsigned int n_p = dofs_per_block[2];
@@ -4682,7 +4704,7 @@ FSI_PU_DWR_Problem<dim>::compute_error_indicators_a_la_PU_DWR(
 
 
   // Finally, we eliminate and distribute hanging nodes in the error estimator
-  ConstraintMatrix dual_hanging_node_constraints_pou;
+  AffineConstraints<double> dual_hanging_node_constraints_pou;
   DoFTools::make_hanging_node_constraints(dof_handler_pou,
                                           dual_hanging_node_constraints_pou);
   dual_hanging_node_constraints_pou.close();
