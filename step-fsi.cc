@@ -1141,7 +1141,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::setup_system_primal()
 {
-  timer.enter_subsection("Setup system.");
+  TimerOutput::Scope t(timer, "Setup system.");
 
   system_matrix_primal.clear();
 
@@ -1232,8 +1232,6 @@ FSI_PU_DWR_Problem<dim>::setup_system_primal()
   system_rhs_primal.block(2).reinit(n_p);
 
   system_rhs_primal.collect_sizes();
-
-  timer.leave_subsection();
 }
 
 
@@ -1260,7 +1258,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_matrix_primal()
 {
-  timer.enter_subsection("Assemble primal matrix.");
+  TimerOutput::Scope t(timer, "Assemble primal matrix.");
   system_matrix_primal = 0;
 
   QGauss<dim>     quadrature_formula(degree + 2);
@@ -1704,8 +1702,6 @@ FSI_PU_DWR_Problem<dim>::assemble_matrix_primal()
         }
       // end cell
     }
-
-  timer.leave_subsection();
 }
 
 
@@ -1718,7 +1714,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_primal()
 {
-  timer.enter_subsection("Assemble primal rhs.");
+  TimerOutput::Scope t(timer, "Assemble primal rhs.");
   system_rhs_primal = 0;
 
   QGauss<dim>     quadrature_formula(degree + 2);
@@ -2069,8 +2065,6 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_primal()
         }
 
     } // end cell
-
-  timer.leave_subsection();
 }
 
 
@@ -2218,7 +2212,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::solve_primal()
 {
-  timer.enter_subsection("Solve primal linear system.");
+  TimerOutput::Scope t(timer, "Solve primal linear system.");
   Vector<double> sol, rhs;
   sol = newton_update_primal;
   rhs = system_rhs_primal;
@@ -2227,7 +2221,6 @@ FSI_PU_DWR_Problem<dim>::solve_primal()
   newton_update_primal = sol;
 
   constraints_primal.distribute(newton_update_primal);
-  timer.leave_subsection();
 }
 
 // This is the Newton iteration with simple linesearch backtracking
@@ -2370,7 +2363,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::setup_system_adjoint()
 {
-  timer.enter_subsection("Setup adjoint system.");
+  TimerOutput::Scope t(timer, "Setup adjoint system.");
 
   system_matrix_adjoint.clear();
 
@@ -2453,8 +2446,6 @@ FSI_PU_DWR_Problem<dim>::setup_system_adjoint()
   system_rhs_adjoint.block(2).reinit(n_p);
 
   system_rhs_adjoint.collect_sizes();
-
-  timer.leave_subsection();
 }
 
 
@@ -2463,7 +2454,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_matrix_adjoint()
 {
-  timer.enter_subsection("Assemble adjoint matrix.");
+  TimerOutput::Scope t(timer, "Assemble adjoint matrix.");
   system_matrix_adjoint = 0;
 
   // Choose quadrature rule sufficiently high with respect
@@ -2965,8 +2956,6 @@ FSI_PU_DWR_Problem<dim>::assemble_matrix_adjoint()
       // update primal cell
       ++cell_primal;
     }
-
-  timer.leave_subsection();
 }
 
 
@@ -2976,7 +2965,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_drag()
 {
-  timer.enter_subsection("Assemble adjoint rhs.");
+  TimerOutput::Scope t(timer, "Assemble adjoint rhs.");
   system_rhs_adjoint = 0;
 
   // Info: Quadrature degree must be sufficiently high
@@ -3233,8 +3222,6 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_drag()
         }
 
     } // end cell
-
-  timer.leave_subsection();
 }
 
 
@@ -3242,7 +3229,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_pressure_point()
 {
-  timer.enter_subsection("Assemble adjoint rhs.");
+  TimerOutput::Scope t(timer, "Assemble adjoint rhs.");
   system_rhs_adjoint = 0;
 
   Point<dim> evaluation_point(0.15, 0.2);
@@ -3274,8 +3261,6 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_pressure_point()
             system_rhs_adjoint(cell->vertex_dof_index(vertex, 4)) = -1;
           }
       }
-
-  timer.leave_subsection();
 }
 
 
@@ -3283,7 +3268,7 @@ template <int dim>
 void
 FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_displacement_point()
 {
-  timer.enter_subsection("Assemble adjoint rhs.");
+  TimerOutput::Scope t(timer, "Assemble adjoint rhs.");
   system_rhs_adjoint = 0;
 
   Point<dim> evaluation_point(0.6, 0.2);
@@ -3303,8 +3288,6 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_adjoint_displacement_point()
             system_rhs_adjoint(cell->vertex_dof_index(vertex, 2)) = 1;
           }
       }
-
-  timer.leave_subsection();
 }
 
 
@@ -3399,7 +3382,7 @@ FSI_PU_DWR_Problem<dim>::solve_adjoint()
   timer_solve_adjoint.start();
 
   // Linear solution
-  timer.enter_subsection("Solve linear adjoint system.");
+  TimerOutput::Scope t(timer, "Solve linear adjoint system.");
   Vector<double> sol, rhs;
   sol = solution_adjoint;
   rhs = system_rhs_adjoint;
@@ -3417,8 +3400,6 @@ FSI_PU_DWR_Problem<dim>::solve_adjoint()
             << timer_solve_adjoint.cpu_time() << std::endl;
 
   timer_solve_adjoint.reset();
-
-  timer.leave_subsection();
 }
 
 
