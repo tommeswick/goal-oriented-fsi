@@ -4846,13 +4846,20 @@ FSI_PU_DWR_Problem<dim>::run()
           // Use solution transfer to interpolate solution
           // to the next mesh in order to have a better
           // initial guess for the next refinement level.
-          BlockVector<double> tmp_solution_primal;
-          tmp_solution_primal = solution_primal;
+          // OLD: deal.II < 9.7.0
+          //BlockVector<double> tmp_solution_primal;
+          //tmp_solution_primal = solution_primal;
 
           SolutionTransfer<dim, BlockVector<double>> solution_transfer(
             dof_handler_primal);
-          solution_transfer.prepare_for_coarsening_and_refinement(
-            tmp_solution_primal);
+
+         // deal.II 9.7.0
+         solution_transfer.prepare_for_coarsening_and_refinement(
+            solution_primal);
+
+         // OLD: deal.II < 9.7.0
+          //solution_transfer.prepare_for_coarsening_and_refinement(
+           // tmp_solution_primal);
 
           // Choose refinement strategy. The choice
           // of '1' will take the PU DWR estimator.
@@ -4905,8 +4912,12 @@ FSI_PU_DWR_Problem<dim>::run()
 
               setup_system_adjoint();
 
-              solution_transfer.interpolate(tmp_solution_primal,
-                                            solution_primal);
+             // OLD deal.II < 9.7.0
+              //solution_transfer.interpolate(tmp_solution_primal,
+               // solution_primal);
+             
+             // deal.II 9.7.0
+             solution_transfer.interpolate(solution_primal);
             }
 
 
