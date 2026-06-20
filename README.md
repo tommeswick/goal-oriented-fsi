@@ -1,8 +1,6 @@
 # goal-oriented-fsi
 
-The following only uses UMFPACK for the solving of primal and adjoint linear systems.
-
-Goal-oriented posteriori error estimation and mesh adaptivity with a partition-of-unity dual-weighted residual method applied to stationary fluid-structure interaction 
+In this code, goal-oriented posteriori error estimation and mesh adaptivity with a partition-of-unity dual-weighted residual method are implemented and applied to stationary fluid-structure interaction. As linear solver, the following only uses UMFPACK for the solving of primal and adjoint linear systems.
 
 This code is based on www.dealii.org Version 9.7.0. Except UMFPACK (that usually comes as a bundled package), no additional software interfaces are needed.
 
