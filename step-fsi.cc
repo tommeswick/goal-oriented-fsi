@@ -836,9 +836,9 @@ private:
 
   // Boundary conditions (bc)
   void
-  set_initial_bc_primal();
+  set_bc_in_initial_newton_guess_primal();
   void
-  set_newton_bc_primal();
+  set_bc_in_subsequent_newton_iter_primal();
 
   // Linear primal solver
   void
@@ -1163,7 +1163,7 @@ FSI_PU_DWR_Problem<dim>::setup_system_primal()
 
   {
     constraints_primal.clear();
-    set_newton_bc_primal();
+    set_bc_in_subsequent_newton_iter_primal();
     DoFTools::make_hanging_node_constraints(dof_handler_primal,
                                             constraints_primal);
   }
@@ -2082,7 +2082,7 @@ FSI_PU_DWR_Problem<dim>::assemble_rhs_primal()
 // one major advantage of the `variational-monolithic' formulation.
 template <int dim>
 void
-FSI_PU_DWR_Problem<dim>::set_initial_bc_primal()
+FSI_PU_DWR_Problem<dim>::set_bc_in_initial_newton_guess_primal()
 {
   // Only place holder since no time-dependent problem is considered here.
   double time = 0.0;
@@ -2155,7 +2155,7 @@ FSI_PU_DWR_Problem<dim>::set_initial_bc_primal()
 // conditions, now.
 template <int dim>
 void
-FSI_PU_DWR_Problem<dim>::set_newton_bc_primal()
+FSI_PU_DWR_Problem<dim>::set_bc_in_subsequent_newton_iter_primal()
 {
   std::vector<bool> component_mask(dim + dim + 1, true);
   component_mask[dim + dim] = false; // p
@@ -2251,7 +2251,7 @@ FSI_PU_DWR_Problem<dim>::newton_iteration_primal()
 
   // Application of the initial boundary conditions to the
   // variational equations:
-  set_initial_bc_primal();
+  set_bc_in_initial_newton_guess_primal();
   assemble_rhs_primal();
 
   double       newton_residual     = system_rhs_primal.linfty_norm();
